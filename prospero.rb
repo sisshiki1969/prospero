@@ -1,4 +1,4 @@
-IMAGE_SIZE = 1024
+IMAGE_SIZE = 512
 f = File.open('out.ppm', 'wb') # write the image out
 f.write("P5\n#{IMAGE_SIZE} #{IMAGE_SIZE}\n255\n")
 

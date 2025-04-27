@@ -4,7 +4,7 @@ import sys
 with open('prospero.vm') as f:
     text = f.read().strip()
 
-image_size = 128
+image_size = 512
 space = np.linspace(-1, 1, image_size)
 (x, y) = np.meshgrid(space, -space)
 v = {}
