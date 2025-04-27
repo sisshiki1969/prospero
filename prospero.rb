@@ -1,4 +1,4 @@
-IMAGE_SIZE = 256
+IMAGE_SIZE = 512
 
 class SIMDFloat
     attr_accessor :value
@@ -207,33 +207,56 @@ end
 y = SIMDArray.new(IMAGE_SIZE) do |i|
     SIMDArray.new(IMAGE_SIZE, 1.0 - 2.0 * i.to_f / (IMAGE_SIZE - 1))
 end
-v = []
+
+insns = []
 
 for line in text.split("\n")
     if line.start_with?("#")
         next
     end
-    #puts line
     out, op, *args = line.split(" ")
-    out = out.delete_prefix("_").to_i(16)
+    if out.delete_prefix("_").to_i(16) != insns.size
+        raise "instruction #{out} does not match the position #{insns.size}"
+    end
     args.map!{ |arg| if arg.start_with?("_") then arg.delete_prefix("_").to_i(16) else arg.to_f end }
-    case op
-    when "var-x"; v[out] = x
-    when "var-y"; v[out] = y
-    when "const"; v[out] = SIMDFloat.new(args[0])
-    when "add"; v[out] = v[args[0]] + v[args[1]]
-    when "sub"; v[out] = v[args[0]] - v[args[1]]
-    when "mul"; v[out] = v[args[0]] * v[args[1]]
-    when "max"; v[out] = v[args[0]].max(v[args[1]])
-    when "min"; v[out] = v[args[0]].min(v[args[1]])
-    when "neg"; v[out] = -v[args[0]]
-    when "square"; v[out] = v[args[0]] * v[args[0]]
-    when "sqrt"; v[out] = v[args[0]].sqrt
+    insns << case op
+    when "var-x"; [0]
+    when "var-y"; [1]
+    when "const"; [2, SIMDFloat.new(args[0])]
+    when "add"; [3, args[0], args[1]]
+    when "sub"; [4, args[0], args[1]]
+    when "mul"; [5, args[0], args[1]]
+    when "max"; [6, args[0], args[1]]
+    when "min"; [7, args[0], args[1]]
+    when "neg"; [8, args[0]]
+    when "square"; [9, args[0]]
+    when "sqrt"; [10, args[0]]
     else raise "unknown opcode '#{op}'"
     end
 end
 
-out = v[out]
+v = []
+
+insn_size = insns.size
+for i in 0..insn_size - 1
+    insn, args0, args1 = insns[i]
+    case insn
+    when 0; v[i] = x
+    when 1; v[i] = y
+    when 2; v[i] = args0
+    when 3; v[i] = v[args0] + v[args1]
+    when 4; v[i] = v[args0] - v[args1]
+    when 5; v[i] = v[args0] * v[args1]
+    when 6; v[i] = v[args0].max(v[args1])
+    when 7; v[i] = v[args0].min(v[args1])
+    when 8; v[i] = -v[args0]
+    when 9; v[i] = v[args0] * v[args0]
+    when 10;v[i] = v[args0].sqrt
+    else raise "unknown opcode '#{insn}'"
+    end
+end
+
+out = v[-1]
 
 f = File.open('out_ruby.ppm', 'wb') # write the image out
 f.write("P5\n#{IMAGE_SIZE} #{IMAGE_SIZE}\n255\n")
