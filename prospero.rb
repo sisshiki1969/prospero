@@ -1,4 +1,4 @@
-IMAGE_SIZE = 512
+IMAGE_SIZE = 2048
 f = File.open('out.ppm', 'wb') # write the image out
 f.write("P5\n#{IMAGE_SIZE} #{IMAGE_SIZE}\n255\n")
 
@@ -61,7 +61,7 @@ def compile(insns, i)
     when 6; "____max(#{compile(insns, args0)}, #{compile(insns, args1)})"
     when 7; "____min(#{compile(insns, args0)}, #{compile(insns, args1)})"
     when 8; "(-#{compile(insns, args0)})"
-    when 9; "(#{compile(insns, args0)} * #{compile(insns, args0)})"
+    when 9; "(#{compile(insns, args0)} ** 2)"
     when 10; "Math.sqrt(#{compile(insns, args0)})"
     else raise "unknown opcode '#{insn}'"
     end
